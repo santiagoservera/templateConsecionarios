@@ -1,0 +1,465 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "sqlserver"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// Roles: ADMIN | GERENTE | VENDEDOR | ASESOR
+// OrigenCliente: VISITA | WHATSAPP | INSTAGRAM | REFERIDO | WEB | OTRO
+// TipoVehiculo: AUTO | MOTO
+// EstadoVehiculo: DISPONIBLE | RESERVADO | VENDIDO | EN_CONSIGNACION
+// TipoStock: NUEVO | USADO | CONSIGNACION
+// EtapaLead: NUEVO | CONTACTADO | INTERESADO | NEGOCIACION | GANADO | PERDIDO
+// FormaPago: CONTADO | FINANCIADO | MIXTO
+// EstadoVenta: RESERVA | EN_TRAMITE | ENTREGADO | CANCELADO
+// EstadoFinanciamiento: PENDIENTE | APROBADO | RECHAZADO
+// EstadoConsignacion: ACTIVA | VENDIDA | RETIRADA
+// TipoDocumento: BOLETO | CONTRATO | CESION | OTRO
+// TipoPostventa: GARANTIA | RECLAMO | CONSULTA | SEGUIMIENTO
+// EstadoPostventa: ABIERTO | EN_GESTION | CERRADO
+// EstadoComision: PENDIENTE | LIQUIDADA
+
+model Rol {
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique
+  descripcion String?
+  permisos    String   @db.NVarChar(Max)
+  esDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  usuarios Usuario[]
+}
+
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  nombre       String
+  email        String   @unique
+  passwordHash String
+  rol          String   @default("VENDEDOR")
+  activo       Boolean  @default(true)
+  permisosJson String?  @db.NVarChar(Max)
+  comisionPct  Decimal? @db.Decimal(5, 2)
+  rolId        Int?
+  createdAt    DateTime @default(now())
+
+  rolPersonalizado Rol?              @relation(fields: [rolId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  clientes         Cliente[]
+  leads            Lead[]
+  ventas           Venta[]
+  gastos           GastoVehiculo[]
+  postventas       Postventa[]
+  comisiones       Comision[]
+  documentos       Documento[]
+  services         ServiceVehiculo[]
+  planesPago       PlanPagoDNI[]
+  cuotasPlan       CuotaPlanPago[]
+  sesionCaja       SesionCaja[]
+  movimientosCaja  MovimientoCaja[]
+}
+
+model Cliente {
+  id         Int      @id @default(autoincrement())
+  nombre     String
+  apellido   String
+  dniCuit    String?
+  telefono   String?
+  email      String?
+  direccion  String?
+  origen     String   @default("VISITA")
+  vendedorId Int?
+  createdAt  DateTime @default(now())
+
+  vendedor       Usuario?       @relation(fields: [vendedorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  leads          Lead[]
+  ventas         Venta[]
+  consignaciones Consignacion[]
+  postventas     Postventa[]
+  planesPago     PlanPagoDNI[]
+}
+
+model Vehiculo {
+  id           Int      @id @default(autoincrement())
+  tipo         String
+  marca        String
+  modelo       String
+  anio         Int
+  version      String?
+  color        String?
+  vinChasis    String?  @unique
+  patente      String?  @unique
+  km           Int      @default(0)
+  combustible  String?
+  transmision  String?
+  estado        String  @default("DISPONIBLE")
+  enPreparacion Boolean @default(false)
+  tipoStock     String
+  precioCosto  Decimal  @db.Decimal(12, 2)
+  precioVenta  Decimal  @db.Decimal(12, 2)
+  precioMinimo Decimal? @db.Decimal(12, 2)
+  fotosJson    String?  @db.NVarChar(Max)
+  createdAt    DateTime @default(now())
+
+  gastos          GastoVehiculo[]
+  leads           Lead[]
+  venta           Venta?
+  planPago        PlanPagoDNI?
+  consignacion    Consignacion?
+  permutaGenerada Permuta?          @relation("VehiculoDePermuta")
+  services        ServiceVehiculo[]
+}
+
+model GastoVehiculo {
+  id         Int      @id @default(autoincrement())
+  vehiculoId Int
+  concepto   String
+  monto      Decimal  @db.Decimal(10, 2)
+  proveedor  String?
+  fecha      DateTime @default(now())
+  usuarioId  Int
+
+  vehiculo Vehiculo @relation(fields: [vehiculoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario  Usuario  @relation(fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Lead {
+  id                Int       @id @default(autoincrement())
+  clienteId         Int
+  vendedorId        Int
+  vehiculoInteresId Int?
+  etapa             String    @default("NUEVO")
+  origen            String?
+  notas             String?   @db.NVarChar(Max)
+  proximoContacto   DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  cliente         Cliente   @relation(fields: [clienteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vendedor        Usuario   @relation(fields: [vendedorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vehiculoInteres Vehiculo? @relation(fields: [vehiculoInteresId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Venta {
+  id                  Int       @id @default(autoincrement())
+  clienteId           Int
+  vehiculoId          Int       @unique
+  vendedorId          Int
+  precioFinal         Decimal   @db.Decimal(12, 2)
+  formaPago           String
+  tienePermuta        Boolean   @default(false)
+  tieneFinanciamiento Boolean   @default(false)
+  estado              String    @default("RESERVA")
+  fechaReserva        DateTime  @default(now())
+  fechaEntrega        DateTime?
+  createdAt           DateTime  @default(now())
+
+  cliente        Cliente         @relation(fields: [clienteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vehiculo       Vehiculo        @relation(fields: [vehiculoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vendedor       Usuario         @relation(fields: [vendedorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  permuta        Permuta?
+  financiamiento Financiamiento?
+  documentos     Documento[]
+  postventas     Postventa[]
+  comision       Comision?
+  services       ServiceVehiculo[]
+  planPago       PlanPagoDNI?
+  factura        Factura?
+}
+
+// ── Facturación electrónica AFIP ──────────────────────────────────────────────
+// TipoFactura: FACTURA_A | FACTURA_B | FACTURA_C
+// EstadoFactura: PENDIENTE | EMITIDA | ERROR
+
+model Factura {
+  id                  Int       @id @default(autoincrement())
+  ventaId             Int       @unique
+  tipo                String    @default("FACTURA_B")
+  puntoVenta          Int       @default(1)
+  numero              Int
+  cae                 String?
+  caeFechaVencimiento DateTime?
+  fechaEmision        DateTime  @default(now())
+  importeNeto         Decimal   @db.Decimal(12, 2)
+  importeIva          Decimal   @db.Decimal(12, 2)
+  importeTotal        Decimal   @db.Decimal(12, 2)
+  estado              String    @default("PENDIENTE")
+  errorMensaje        String?   @db.NVarChar(Max)
+  demoMode            Boolean   @default(false)
+
+  venta Venta @relation(fields: [ventaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Permuta {
+  id                 Int     @id @default(autoincrement())
+  ventaId            Int     @unique
+  marca              String
+  modelo             String
+  anio               Int
+  patente            String?
+  km                 Int
+  valorTasacion      Decimal @db.Decimal(12, 2)
+  estadoIngreso      String?
+  vehiculoGeneradoId Int?    @unique
+
+  venta            Venta     @relation(fields: [ventaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vehiculoGenerado Vehiculo? @relation("VehiculoDePermuta", fields: [vehiculoGeneradoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// EstadoFinanciamiento: PENDIENTE | APROBADO | RECHAZADO
+
+model Financiamiento {
+  id               Int       @id @default(autoincrement())
+  ventaId          Int       @unique
+  entidad          String
+  montoFinanciado  Decimal   @db.Decimal(12, 2)
+  tasaInteres      Decimal   @db.Decimal(5, 2)
+  cantCuotas       Int
+  valorCuota       Decimal   @db.Decimal(10, 2)
+  estado           String    @default("PENDIENTE")
+  fechaAprobacion  DateTime?
+  numeroExpediente String?
+  observaciones    String?   @db.NVarChar(Max)
+
+  venta Venta @relation(fields: [ventaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Consignacion {
+  id               Int       @id @default(autoincrement())
+  vehiculoId       Int       @unique
+  propietarioId    Int
+  precioAcordado   Decimal   @db.Decimal(12, 2)
+  comisionPct      Decimal   @db.Decimal(5, 2)
+  estado           String    @default("ACTIVA")
+  fechaIngreso     DateTime  @default(now())
+  fechaVencimiento DateTime?
+  observaciones    String?   @db.NVarChar(Max)
+
+  vehiculo    Vehiculo @relation(fields: [vehiculoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  propietario Cliente  @relation(fields: [propietarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+
+model Documento {
+  id              Int      @id @default(autoincrement())
+  ventaId         Int
+  tipo            String
+  urlArchivo      String?
+  fechaGeneracion DateTime @default(now())
+  usuarioId       Int
+
+  venta   Venta   @relation(fields: [ventaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Postventa {
+  id              Int       @id @default(autoincrement())
+  ventaId         Int
+  clienteId       Int
+  tipo            String
+  descripcion     String    @db.NVarChar(Max)
+  estado          String    @default("ABIERTO")
+  fechaContacto   DateTime  @default(now())
+  fechaResolucion DateTime?
+  usuarioId       Int
+
+  venta   Venta   @relation(fields: [ventaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// TipoService: REVISION | MANTENIMIENTO | GARANTIA | OTRO
+// EstadoService: PENDIENTE | REALIZADO | CANCELADO
+
+model ServiceVehiculo {
+  id                  Int       @id @default(autoincrement())
+  ventaId             Int?
+  vehiculoId          Int?
+  tipoService         String    @default("MANTENIMIENTO")
+  descripcion         String    @db.NVarChar(Max)
+  kmActual            Int?
+  kmProximoService    Int?
+  fechaService        DateTime  @default(now())
+  fechaProximoService DateTime?
+  estado              String    @default("PENDIENTE")
+  observaciones       String?   @db.NVarChar(Max)
+  usuarioId           Int
+  createdAt           DateTime  @default(now())
+
+  venta    Venta?    @relation(fields: [ventaId],    references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vehiculo Vehiculo? @relation(fields: [vehiculoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario  Usuario   @relation(fields: [usuarioId],  references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// ConvenioBanco: banco con planes de financiamiento personalizables
+// PlanCuotas: cuotas + tasa para un banco dado
+
+model ConvenioBanco {
+  id          Int          @id @default(autoincrement())
+  nombre      String       @unique
+  descripcion String?
+  activo      Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+
+  planes PlanCuotas[]
+}
+
+model PlanCuotas {
+  id              Int     @id @default(autoincrement())
+  convenioBancoId Int
+  cantCuotas      Int
+  tasaInteres     Decimal @db.Decimal(5, 2)
+  activo          Boolean @default(true)
+
+  banco ConvenioBanco @relation(fields: [convenioBancoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// CategoriaIndumentaria: Ropa | Accesorio | Calzado | Merchandising | Otro
+// TallaIndumentaria: XS | S | M | L | XL | XXL | UNICA
+
+model Indumentaria {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  descripcion String?  @db.NVarChar(Max)
+  categoria   String   @default("Otro")
+  talla       String?
+  color       String?
+  marca       String?
+  cantidad    Int      @default(0)
+  precioCosto Decimal  @db.Decimal(10, 2)
+  precioVenta Decimal  @db.Decimal(10, 2)
+  fotosJson   String?  @db.NVarChar(Max)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+// ── Planes de pago DNI ────────────────────────────────────────────────────────
+// EstadoPlan: ACTIVO | SUSPENDIDO | COMPLETADO | CANCELADO
+// EstadoCuotaPlan: PENDIENTE | PAGADO | VENCIDO
+
+model PlanPagoDNI {
+  id                Int      @id @default(autoincrement())
+  clienteId         Int
+  vehiculoId        Int      @unique
+  vendedorId        Int
+  precioTotal       Decimal  @db.Decimal(12, 2)
+  cantCuotas        Int
+  valorCuota        Decimal  @db.Decimal(10, 2)
+  montoEntrega      Decimal? @db.Decimal(12, 2)
+  montoPagado       Decimal  @default(0) @db.Decimal(12, 2)
+  estado            String   @default("ACTIVO")
+  vehiculoEntregado Boolean  @default(false)
+  ventaId           Int?     @unique
+  observaciones     String?  @db.NVarChar(Max)
+  createdAt         DateTime @default(now())
+
+  cliente  Cliente         @relation(fields: [clienteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vehiculo Vehiculo        @relation(fields: [vehiculoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vendedor Usuario         @relation(fields: [vendedorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  venta    Venta?          @relation(fields: [ventaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cuotas   CuotaPlanPago[]
+  movimientos MovimientoCaja[]
+}
+
+model CuotaPlanPago {
+  id               Int       @id @default(autoincrement())
+  planPagoDNIId    Int
+  numeroCuota      Int
+  fechaVencimiento DateTime
+  monto            Decimal   @db.Decimal(10, 2)
+  estado           String    @default("PENDIENTE")
+  fechaPago        DateTime?
+  observaciones    String?   @db.NVarChar(Max)
+  usuarioId        Int?
+
+  plan    PlanPagoDNI @relation(fields: [planPagoDNIId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario Usuario?    @relation(fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// ── Caja ─────────────────────────────────────────────────────────────────────
+// EstadoSesion: ABIERTA | CERRADA
+// TipoMovimiento: INGRESO | EGRESO
+// ConceptoMovimiento: CUOTA_PLAN_PAGO | VENTA_INDUMENTARIA | GASTO | OTRO
+
+model SesionCaja {
+  id            Int       @id @default(autoincrement())
+  usuarioId     Int
+  fechaApertura DateTime  @default(now())
+  fechaCierre   DateTime?
+  montoApertura Decimal   @db.Decimal(10, 2)
+  montoCierre   Decimal?  @db.Decimal(10, 2)
+  estado        String    @default("ABIERTA")
+  observaciones String?   @db.NVarChar(Max)
+
+  usuario     Usuario          @relation(fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  movimientos MovimientoCaja[]
+}
+
+model MovimientoCaja {
+  id            Int      @id @default(autoincrement())
+  sesionCajaId  Int
+  tipo          String
+  concepto      String
+  monto         Decimal  @db.Decimal(10, 2)
+  planPagoDNIId Int?
+  observaciones String?  @db.NVarChar(Max)
+  usuarioId     Int
+  createdAt     DateTime @default(now())
+
+  sesion   SesionCaja  @relation(fields: [sesionCajaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  planPago PlanPagoDNI? @relation(fields: [planPagoDNIId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario  Usuario      @relation(fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// ── Seguros ───────────────────────────────────────────────────────────────────
+// TipoCobertura: RESPONSABILIDAD_CIVIL | TERCEROS_COMPLETO | TODO_RIESGO | OTRO
+// EstadoSeguro: VIGENTE | VENCIDO | CANCELADO
+
+model Seguro {
+  id            Int      @id @default(autoincrement())
+  aseguradora   String
+  numeroPoliza  String   @unique
+  tipoCobertura String   @default("TODO_RIESGO")
+  vigenciaDesde DateTime
+  vigenciaHasta DateTime
+  monto         Decimal? @db.Decimal(10, 2)
+  urlDocumento  String?
+  observaciones String?  @db.NVarChar(Max)
+  estado        String   @default("VIGENTE")
+  createdAt     DateTime @default(now())
+}
+
+model Comision {
+  id               Int       @id @default(autoincrement())
+  ventaId          Int       @unique
+  vendedorId       Int
+  montoBase        Decimal   @db.Decimal(12, 2)
+  porcentaje       Decimal   @db.Decimal(5, 2)
+  montoComision    Decimal   @db.Decimal(10, 2)
+  estado           String    @default("PENDIENTE")
+  fechaLiquidacion DateTime?
+
+  venta    Venta   @relation(fields: [ventaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vendedor Usuario @relation(fields: [vendedorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// ── Configuración del sistema ─────────────────────────────────────────────────
+// Registro único (id = 1 siempre). Gestionado solo por ADMIN.
+
+model Configuracion {
+  id                  Int     @id @default(1)
+  nombreConcesionaria String  @default("DealerOS")
+  comisionPctDefault  Decimal @default(2) @db.Decimal(5, 2)
+  moneda              String  @default("ARS")
+  direccion           String?
+  telefono            String?
+  email               String?
+  // AFIP / Facturación
+  afipCuit            String?
+  afipPuntoVenta      Int     @default(1)
+  afipCondicionIva    String  @default("RESPONSABLE_INSCRIPTO")
+  afipIvaAlicuota     Decimal @default(21) @db.Decimal(5, 2)
+  updatedAt           DateTime @updatedAt
+}

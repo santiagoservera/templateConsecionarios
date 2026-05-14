@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+
+# Environment — nunca subir credenciales
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.staging
+
+# Certificados y claves (AFIP, JWT, SSL)
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+*.cer
+server/src/afip/keys/
+server/afip-keys/
+
+# Build
+dist/
+build/
+
+# Archivos generados (facturas PDF, exports)
+*.pdf
+exports/
+generated/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# Prisma
+# Las migraciones SÍ se versionar — NO ignorar migrations/
+# Pero ignorar la carpeta de cliente generado (se regenera con prisma generate)
+server/src/prisma/generated/
+server/node_modules/.prisma/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Cloudinary — no subir presets locales si los hubiera
+cloudinary.config.js
