@@ -16,8 +16,7 @@ node_modules/
 *.p12
 *.pfx
 *.cer
-server/src/afip/keys/
-server/afip-keys/
+server/certs/
 
 # Build
 dist/
