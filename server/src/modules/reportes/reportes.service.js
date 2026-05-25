@@ -380,13 +380,8 @@ const getAlertas = async () => {
       },
     }),
 
-    // Seguros que vencen en los próximos 30 días
-    prisma.seguro.findMany({
-      where: { estado: 'VIGENTE', vigenciaHasta: { gte: hoy, lte: en30 } },
-      take:  10,
-      orderBy: { vigenciaHasta: 'asc' },
-      select: { id: true, aseguradora: true, numeroPoliza: true, vigenciaHasta: true, tipoCobertura: true },
-    }),
+    // Seguros: modelo migrado a catálogo por aseguradora, sin vencimiento por póliza
+    Promise.resolve([]),
 
     // Services pendientes con fecha próximo vencida
     prisma.serviceVehiculo.findMany({

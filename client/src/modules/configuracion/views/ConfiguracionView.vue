@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useConfiguracion } from '../composables/useConfiguracion.js'
 import { useToast } from '../../../shared/composables/useToast.js'
 import { datetime } from '../../../shared/utils/format.js'
+import AppSelect from '../../../shared/components/AppSelect.vue'
 
 const toast = useToast()
 const { config, loading, error, fetchConfig, updateConfig } = useConfiguracion()
@@ -236,11 +237,10 @@ async function guardar() {
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Condición IVA del emisor</label>
-              <select v-model="form.afipCondicionIva"
-                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm px-3.5 py-2.5 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
-                <option value="RESPONSABLE_INSCRIPTO">Responsable Inscripto → emite A o B</option>
-                <option value="MONOTRIBUTO">Monotributista → emite C</option>
-              </select>
+              <AppSelect v-model="form.afipCondicionIva" :options="[
+                { value: 'RESPONSABLE_INSCRIPTO', label: 'Responsable Inscripto — emite A o B' },
+                { value: 'MONOTRIBUTO',           label: 'Monotributista — emite C' },
+              ]" />
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Alícuota IVA (%)</label>

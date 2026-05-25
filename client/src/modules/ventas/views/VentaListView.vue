@@ -127,7 +127,7 @@ const COLUMNS = [
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Ventas</h1>
-        <p class="text-sm text-slate-500 mt-0.5">{{ meta.total }} venta{{ meta.total !== 1 ? 's' : '' }} en total</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ meta.total }} venta{{ meta.total !== 1 ? 's' : '' }} en total</p>
       </div>
       <router-link v-if="canDo('ventas','crear')"
         to="/ventas/nueva"
@@ -164,7 +164,7 @@ const COLUMNS = [
 
         <!-- Fecha desde -->
         <div>
-          <label class="block text-xs text-slate-500 mb-1">Desde</label>
+          <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Desde</label>
           <input
             v-model="filters.fechaDesde"
             type="date"
@@ -175,7 +175,7 @@ const COLUMNS = [
 
         <!-- Fecha hasta -->
         <div>
-          <label class="block text-xs text-slate-500 mb-1">Hasta</label>
+          <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Hasta</label>
           <input
             v-model="filters.fechaHasta"
             type="date"

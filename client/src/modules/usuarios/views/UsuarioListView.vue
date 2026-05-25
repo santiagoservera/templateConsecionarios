@@ -79,7 +79,7 @@ const COLUMNS = [
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Usuarios</h1>
-        <p class="text-sm text-slate-500 mt-0.5">{{ meta.total }} usuario{{ meta.total !== 1 ? 's' : '' }} en total</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ meta.total }} usuario{{ meta.total !== 1 ? 's' : '' }} en total</p>
       </div>
       <button
         class="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm hover:shadow-glow active:scale-[0.98]"

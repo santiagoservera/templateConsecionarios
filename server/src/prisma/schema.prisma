@@ -413,22 +413,38 @@ model MovimientoCaja {
   usuario  Usuario      @relation(fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-// ── Seguros ───────────────────────────────────────────────────────────────────
+// ── Seguros — Catálogo por aseguradora ───────────────────────────────────────
+// Aseguradora: empresa de seguros con la que trabaja el concesionario.
+// Seguro:      plan individual dentro de una aseguradora (cobertura, precio, etc.)
 // TipoCobertura: RESPONSABILIDAD_CIVIL | TERCEROS_COMPLETO | TODO_RIESGO | OTRO
-// EstadoSeguro: VIGENTE | VENCIDO | CANCELADO
+// AplicaA:       AUTO | MOTO | AMBOS
+
+model Aseguradora {
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique
+  descripcion String?
+  contacto    String?  // teléfono o email de contacto
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  planes Seguro[]
+}
 
 model Seguro {
-  id            Int      @id @default(autoincrement())
-  aseguradora   String
-  numeroPoliza  String   @unique
-  tipoCobertura String   @default("TODO_RIESGO")
-  vigenciaDesde DateTime
-  vigenciaHasta DateTime
-  monto         Decimal? @db.Decimal(10, 2)
-  urlDocumento  String?
-  observaciones String?  @db.NVarChar(Max)
-  estado        String   @default("VIGENTE")
-  createdAt     DateTime @default(now())
+  id              Int         @id @default(autoincrement())
+  aseguradoraId   Int
+  codigoPlan      String?
+  tipoCobertura   String      @default("TODO_RIESGO")
+  aplicaA         String      @default("AMBOS")
+  precioMensual   Decimal?    @db.Decimal(10, 2)
+  precioAnual     Decimal?    @db.Decimal(10, 2)
+  sumaCubierta    String?
+  descripcion     String?     @db.NVarChar(Max)
+  urlDocumento    String?
+  activo          Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+
+  aseguradora Aseguradora @relation(fields: [aseguradoraId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Comision {

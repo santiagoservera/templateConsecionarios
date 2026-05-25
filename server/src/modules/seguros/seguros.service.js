@@ -1,40 +1,86 @@
 const prisma = require('../../shared/prisma');
 
-const getAll = async () => {
-  const hoy = new Date();
-  const seguros = await prisma.seguro.findMany({ orderBy: { vigenciaHasta: 'asc' } });
-  // Auto-actualizar estado vencido
-  return seguros.map(s => ({
-    ...s,
-    _vencido: new Date(s.vigenciaHasta) < hoy,
-    _diasRestantes: Math.ceil((new Date(s.vigenciaHasta).getTime() - hoy.getTime()) / 86400000),
-  }));
-};
+const PLANES_ORDER = { orderBy: [{ tipoCobertura: 'asc' }, { precioMensual: 'asc' }] };
 
-const getById = async (id) => {
-  const s = await prisma.seguro.findUnique({ where: { id: Number(id) } });
-  if (!s) throw Object.assign(new Error('Seguro no encontrado'), { statusCode: 404 });
-  const hoy = new Date();
-  return { ...s, _vencido: new Date(s.vigenciaHasta) < hoy, _diasRestantes: Math.ceil((new Date(s.vigenciaHasta).getTime() - hoy.getTime()) / 86400000) };
-};
-
-const create = async ({ vigenciaDesde, vigenciaHasta, ...rest }) => {
-  return prisma.seguro.create({
-    data: { ...rest, vigenciaDesde: new Date(vigenciaDesde), vigenciaHasta: new Date(vigenciaHasta) },
+const getAll = async (soloActivos = true) => {
+  return prisma.aseguradora.findMany({
+    where:   soloActivos ? { activo: true } : {},
+    include: { planes: { where: soloActivos ? { activo: true } : {}, ...PLANES_ORDER } },
+    orderBy: { nombre: 'asc' },
   });
 };
 
-const update = async (id, { vigenciaDesde, vigenciaHasta, ...rest }) => {
+const getById = async (id) => {
+  const aseg = await prisma.aseguradora.findUnique({
+    where:   { id: Number(id) },
+    include: { planes: PLANES_ORDER },
+  });
+  if (!aseg) throw Object.assign(new Error('Aseguradora no encontrada'), { statusCode: 404 });
+  return aseg;
+};
+
+const create = async ({ nombre, descripcion, contacto, planes = [] }) => {
+  return prisma.aseguradora.create({
+    data: {
+      nombre,
+      descripcion,
+      contacto,
+      planes: { create: planes.map(planData) },
+    },
+    include: { planes: PLANES_ORDER },
+  });
+};
+
+const update = async (id, { nombre, descripcion, contacto, activo }) => {
   await getById(id);
-  const data = { ...rest };
-  if (vigenciaDesde) data.vigenciaDesde = new Date(vigenciaDesde);
-  if (vigenciaHasta) data.vigenciaHasta = new Date(vigenciaHasta);
-  return prisma.seguro.update({ where: { id: Number(id) }, data });
+  const data = {};
+  if (nombre      !== undefined) data.nombre      = nombre;
+  if (descripcion !== undefined) data.descripcion = descripcion;
+  if (contacto    !== undefined) data.contacto    = contacto;
+  if (activo      !== undefined) data.activo      = activo;
+  return prisma.aseguradora.update({
+    where:   { id: Number(id) },
+    data,
+    include: { planes: PLANES_ORDER },
+  });
 };
 
 const remove = async (id) => {
   await getById(id);
-  return prisma.seguro.delete({ where: { id: Number(id) } });
+  await prisma.$transaction([
+    prisma.seguro.updateMany({ where: { aseguradoraId: Number(id) }, data: { activo: false } }),
+    prisma.aseguradora.update({ where: { id: Number(id) }, data: { activo: false } }),
+  ]);
 };
 
-module.exports = { getAll, getById, create, update, remove };
+const upsertPlanes = async (aseguradoraId, planes) => {
+  await getById(aseguradoraId);
+  return prisma.$transaction(async (tx) => {
+    await tx.seguro.deleteMany({ where: { aseguradoraId: Number(aseguradoraId) } });
+    if (planes.length) {
+      await tx.seguro.createMany({
+        data: planes.map(p => ({ ...planData(p), aseguradoraId: Number(aseguradoraId) })),
+      });
+    }
+    return prisma.aseguradora.findUnique({
+      where:   { id: Number(aseguradoraId) },
+      include: { planes: PLANES_ORDER },
+    });
+  });
+};
+
+function planData(p) {
+  return {
+    codigoPlan:    p.codigoPlan    ?? null,
+    tipoCobertura: p.tipoCobertura ?? 'TODO_RIESGO',
+    aplicaA:       p.aplicaA       ?? 'AMBOS',
+    precioMensual: p.precioMensual ?? null,
+    precioAnual:   p.precioAnual   ?? null,
+    sumaCubierta:  p.sumaCubierta  ?? null,
+    descripcion:   p.descripcion   ?? null,
+    urlDocumento:  p.urlDocumento  ?? null,
+    activo:        p.activo        ?? true,
+  };
+}
+
+module.exports = { getAll, getById, create, update, remove, upsertPlanes };

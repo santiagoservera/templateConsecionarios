@@ -11,11 +11,8 @@ const getByVehiculo = async (vehiculoId) => {
   });
   if (!vehiculo) throw Object.assign(new Error('Vehículo no encontrado'), { statusCode: 404 });
 
-  return prisma.preparacion.findMany({
-    where:   { vehiculoId: Number(vehiculoId) },
-    include: PREP_INCLUDE,
-    orderBy: { createdAt: 'desc' },
-  });
+  // Modelo Preparacion eliminado del schema — devuelve vacío para no romper el cliente
+  return [];
 };
 
 /**

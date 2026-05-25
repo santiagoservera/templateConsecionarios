@@ -2,32 +2,41 @@ import { ref } from 'vue'
 import api from '../../../plugins/axios.js'
 
 export function useSeguros() {
-  const seguros = ref([])
-  const loading = ref(false)
-  const error   = ref(null)
+  const aseguradoras = ref([])
+  const loading      = ref(false)
+  const error        = ref(null)
 
-  async function fetchSeguros() {
-    loading.value = true; error.value = null
+  async function fetchAseguradoras(soloActivos = true) {
+    loading.value = true
+    error.value   = null
     try {
-      const { data } = await api.get('/seguros')
-      seguros.value = data.data
-    } catch (err) { error.value = err.response?.data?.error ?? 'Error al cargar seguros' }
-    finally { loading.value = false }
+      const { data } = await api.get('/seguros', { params: { soloActivos } })
+      aseguradoras.value = data.data
+    } catch (err) {
+      error.value = err.response?.data?.error ?? 'Error al cargar seguros'
+    } finally {
+      loading.value = false
+    }
   }
 
-  async function createSeguro(payload) {
+  async function createAseguradora(payload) {
     const { data } = await api.post('/seguros', payload)
     return data.data
   }
 
-  async function updateSeguro(id, payload) {
+  async function updateAseguradora(id, payload) {
     const { data } = await api.patch(`/seguros/${id}`, payload)
     return data.data
   }
 
-  async function deleteSeguro(id) {
+  async function removeAseguradora(id) {
     await api.delete(`/seguros/${id}`)
   }
 
-  return { seguros, loading, error, fetchSeguros, createSeguro, updateSeguro, deleteSeguro }
+  async function upsertPlanes(aseguradoraId, planes) {
+    const { data } = await api.put(`/seguros/${aseguradoraId}/planes`, { planes })
+    return data.data
+  }
+
+  return { aseguradoras, loading, error, fetchAseguradoras, createAseguradora, updateAseguradora, removeAseguradora, upsertPlanes }
 }

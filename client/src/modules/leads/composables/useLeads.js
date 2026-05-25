@@ -69,6 +69,16 @@ export function useLeads() {
     }
   }
 
+  async function updateLead(id, payload) {
+    try {
+      const { data } = await api.patch(`/leads/${id}`, payload)
+      return data.data
+    } catch (err) {
+      error.value = err.response?.data?.error ?? 'Error al actualizar lead'
+      throw err
+    }
+  }
+
   async function deleteLead(id) {
     try {
       await api.delete(`/leads/${id}`)
@@ -78,5 +88,5 @@ export function useLeads() {
     }
   }
 
-  return { leads, lead, loading, error, fetchLeads, fetchLead, createLead, cambiarEtapa, deleteLead }
+  return { leads, lead, loading, error, fetchLeads, fetchLead, createLead, updateLead, cambiarEtapa, deleteLead }
 }

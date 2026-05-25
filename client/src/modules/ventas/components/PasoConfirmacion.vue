@@ -68,7 +68,7 @@ const wizard = useVentaWizardStore()
 
         <template v-if="wizard.pago.tienePermuta">
           <div class="border-t border-slate-200 dark:border-white/10 pt-2 mt-2">
-            <p class="text-xs font-semibold text-slate-500 mb-1">Permuta</p>
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Permuta</p>
             <p class="text-sm">
               {{ wizard.pago.permuta.marca }} {{ wizard.pago.permuta.modelo }} {{ wizard.pago.permuta.anio }}
             </p>
@@ -78,7 +78,7 @@ const wizard = useVentaWizardStore()
 
         <template v-if="wizard.pago.tieneFinanciamiento">
           <div class="border-t border-slate-200 dark:border-white/10 pt-2 mt-2">
-            <p class="text-xs font-semibold text-slate-500 mb-1">Financiamiento</p>
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Financiamiento</p>
             <p class="text-sm">
               {{ wizard.pago.financiamiento.entidad }} —
               {{ wizard.pago.financiamiento.cantCuotas }} cuotas de

@@ -68,7 +68,7 @@ const emit = defineEmits(['row-click'])
               : '',
             clickable
               ? 'cursor-pointer hover:bg-primary-50/60 dark:hover:bg-primary-500/5'
-              : 'hover:bg-slate-50/60 dark:hover:bg-white/3',
+              : 'hover:bg-slate-50/60 dark:hover:bg-white/[0.03]',
           ]"
           @click="clickable && emit('row-click', row)"
         >

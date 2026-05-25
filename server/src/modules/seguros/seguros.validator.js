@@ -1,28 +1,36 @@
 const { z } = require('zod');
 
 const TipoCobertura = z.enum(['RESPONSABILIDAD_CIVIL','TERCEROS_COMPLETO','TODO_RIESGO','OTRO']);
-const EstadoSeguro  = z.enum(['VIGENTE','VENCIDO','CANCELADO']);
+const AplicaA       = z.enum(['AUTO','MOTO','AMBOS']);
 
-const createSeguroSchema = z.object({
-  aseguradora:   z.string().min(1, 'Requerido'),
-  numeroPoliza:  z.string().min(1, 'Requerido'),
+const planSchema = z.object({
+  codigoPlan:    z.string().optional().nullable(),
   tipoCobertura: TipoCobertura.default('TODO_RIESGO'),
-  vigenciaDesde: z.string().datetime({ offset: true }),
-  vigenciaHasta: z.string().datetime({ offset: true }),
-  monto:         z.number().positive().optional(),
-  urlDocumento:  z.string().optional(),
-  observaciones: z.string().optional(),
+  aplicaA:       AplicaA.default('AMBOS'),
+  precioMensual: z.number().positive().optional().nullable(),
+  precioAnual:   z.number().positive().optional().nullable(),
+  sumaCubierta:  z.string().optional().nullable(),
+  descripcion:   z.string().optional().nullable(),
+  urlDocumento:  z.string().optional().nullable(),
+  activo:        z.boolean().default(true),
 });
 
-const updateSeguroSchema = z.object({
-  aseguradora:   z.string().min(1).optional(),
-  tipoCobertura: TipoCobertura.optional(),
-  vigenciaDesde: z.string().datetime({ offset: true }).optional(),
-  vigenciaHasta: z.string().datetime({ offset: true }).optional(),
-  monto:         z.number().positive().optional(),
-  urlDocumento:  z.string().optional().nullable(),
-  observaciones: z.string().optional(),
-  estado:        EstadoSeguro.optional(),
+const createAseguradoraSchema = z.object({
+  nombre:      z.string().min(1, 'Requerido'),
+  descripcion: z.string().optional().nullable(),
+  contacto:    z.string().optional().nullable(),
+  planes:      z.array(planSchema).optional().default([]),
+});
+
+const updateAseguradoraSchema = z.object({
+  nombre:      z.string().min(1).optional(),
+  descripcion: z.string().optional().nullable(),
+  contacto:    z.string().optional().nullable(),
+  activo:      z.boolean().optional(),
 }).refine(d => Object.keys(d).length > 0, { message: 'Se requiere al menos un campo' });
 
-module.exports = { createSeguroSchema, updateSeguroSchema };
+const upsertPlanesSchema = z.object({
+  planes: z.array(planSchema).min(0),
+});
+
+module.exports = { createAseguradoraSchema, updateAseguradoraSchema, upsertPlanesSchema };

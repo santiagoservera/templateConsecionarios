@@ -285,7 +285,7 @@ async function confirmarEliminar() {
             <div
               v-for="(plan, idx) in planesForm"
               :key="idx"
-              class="flex items-center gap-3 bg-slate-50 dark:bg-white/3 rounded-xl px-4 py-3 border border-slate-200 dark:border-white/5"
+              class="flex items-center gap-3 bg-slate-50 dark:bg-white/[0.03] rounded-xl px-4 py-3 border border-slate-200 dark:border-white/5"
             >
               <div class="flex-1 grid grid-cols-2 gap-3">
                 <div>
@@ -347,7 +347,7 @@ async function confirmarEliminar() {
         No estará disponible en nuevas ventas.
       </p>
       <template #footer>
-        <button class="text-sm text-slate-600 px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors" @click="showEliminar = false">Cancelar</button>
+        <button class="text-sm text-slate-600 dark:text-slate-300 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors" @click="showEliminar = false">Cancelar</button>
         <button class="text-sm bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-xl font-semibold disabled:opacity-60 transition-colors" :disabled="eliminando" @click="confirmarEliminar">
           {{ eliminando ? 'Desactivando...' : 'Desactivar' }}
         </button>

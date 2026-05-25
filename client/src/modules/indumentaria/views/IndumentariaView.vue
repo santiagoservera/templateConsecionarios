@@ -95,7 +95,7 @@ async function confirmarVenta() {
       cantidad:     Number(ventaCantidad.value),
       sesionCajaId: sesionActiva.value?.id ?? undefined,
     })
-    const total = (Number(ventaItem.value.precioVenta) * ventaCantidad.value).toLocaleString('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:0 })
+    const total = currency(Number(ventaItem.value.precioVenta) * ventaCantidad.value)
     toast.success('Venta registrada', `${ventaCantidad.value}x ${ventaItem.value.nombre} — ${total}`)
     showVentaModal.value = false
     load()

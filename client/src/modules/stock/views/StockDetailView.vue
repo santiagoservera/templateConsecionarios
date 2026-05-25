@@ -230,7 +230,7 @@ const fotoAmpliada = ref(null)
                 :key="i"
                 :src="url"
                 :alt="`Foto ${i + 1}`"
-                class="w-full aspect-square object-cover rounded-xl border border-slate-200 cursor-pointer hover:opacity-90 transition-opacity"
+                class="w-full aspect-square object-cover rounded-xl border border-slate-200 dark:border-white/10 cursor-pointer hover:opacity-90 transition-opacity"
                 @click="fotoAmpliada = url"
               />
             </div>

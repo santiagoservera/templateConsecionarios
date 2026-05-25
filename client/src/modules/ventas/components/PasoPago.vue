@@ -199,7 +199,7 @@ const labelCls = 'block text-xs font-medium text-slate-600 dark:text-slate-400 m
                   {{ plan.cantCuotas }}
                 </p>
                 <p class="text-[10px] text-slate-400">cuotas</p>
-                <p class="text-[11px] font-semibold mt-0.5" :class="planSel?.id === plan.id ? 'text-primary-500' : 'text-slate-500'">
+                <p class="text-[11px] font-semibold mt-0.5" :class="planSel?.id === plan.id ? 'text-primary-500' : 'text-slate-500 dark:text-slate-400'">
                   {{ Number(plan.tasaInteres).toFixed(1) }}% TNA
                 </p>
               </button>

@@ -273,7 +273,7 @@ const maxLeads = computed(() => Math.max(1, ...(props.data.leadsPorEtapa?.map(l 
               <!-- Badge tipo -->
               <span
                 class="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-md mb-0.5"
-                :class="ACTIVIDAD_CONFIG[evento.tipo]?.color ?? 'bg-slate-100 text-slate-500'"
+                :class="ACTIVIDAD_CONFIG[evento.tipo]?.color ?? 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400'"
               >
                 {{ ACTIVIDAD_CONFIG[evento.tipo]?.label ?? evento.tipo }}
               </span>
